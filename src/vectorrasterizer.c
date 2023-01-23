@@ -132,7 +132,7 @@ static inline void VectorWriter_plot_for_fill(VectorWriterData *pData, int x, in
 
 
 /* adapted from http://roguebasin.roguelikedevelopment.org/index.php?title=Bresenham%27s_Line_Algorithm#C.2B.2B */
-static void VectorWriter_bresenham(VectorWriterData *pData, int x1, int y1, int x2, int y2)
+static void VectorWriter_bresenham_int(VectorWriterData *pData, int x1, int y1, int x2, int y2)
 {
     int delta_x, delta_y, error;
     signed char ix, iy;
@@ -187,6 +187,69 @@ static void VectorWriter_bresenham(VectorWriterData *pData, int x1, int y1, int 
             y1 += iy;
  
             VectorWriter_plot(pData, x1, y1);
+        }
+    }
+}
+
+/* from https://github.com/user1pc/SubPixelLine */
+static void VectorWriter_bresenham_double(VectorWriterData *pData, double x1, double y1, double x2, double y2)
+{
+    int dx = x2 - x1;
+    int dy = y2 - y1;
+    int dx_x = (dx >= 0) ? 1 : -1;
+    int dy_y = (dy >= 0) ? 1 : -1;
+    int local_x = x1 % pData->dMetersPerPix;
+    int local_y = y1 % pData->dMetersPerPix;
+    int x_dist = (dx >= 0) ? (pData->dMetersPerPix - local_x) : (local_x);
+    int y_dist = (dy >= 0) ? (pData->dMetersPerPix - local_y) : (local_y);
+    int cross_product = abs(dx) * abs(y_dist) - abs(dy) * abs(x_dist);
+    dx_cross = -abs(dy) * pData->dMetersPerPix;
+    dy_cross = abs(dx) * pData->dMetersPerPix;
+    
+    int x = x1 / pData->dMetersPerPix;
+    int y = y1 / pData->dMetersPerPix;
+    int end_x = x2 / pData->dMetersPerPix;
+    int end_y = y2 / pData->dMetersPerPix;
+    
+    // Perform ceiling/flooring of the pixel endpoints
+    if (dy < 0)
+    {
+        if ((y1 % pData->dMetersPerPix) == 0)
+        {
+            y--;
+            cross_product += dy_cross;
+        }
+    }
+    else if (dy > 0)
+    {
+        if ((y2 % pData->dMetersPerPix) == 0)
+            end_y--;
+    }
+    
+    if (dx < 0)
+    {
+        if ((x1 % pData->dMetersPerPix) == 0)
+        {
+            x--;
+            cross_product += dx_cross;
+        }
+    }
+    else if (dx > 0)
+    {
+        if ((x2 % pData->dMetersPerPix) == 0)
+            end_x--;
+    }
+    
+    while (x != end_x || y != end_y) {
+        VectorWriter_plot(pData, x, y);
+        int old_cross = cross_product;
+        if (old_cross >= 0) {
+            x += dx_x;
+            cross_product += dx_cross;
+        }
+        if (old_cross <= 0) {
+            y += dy_y;
+            cross_product += dy_cross;
         }
     }
 }
