@@ -380,7 +380,6 @@ class ViewerRAT(QObject):
                     usage = rat.GetUsageOfCol(col)
                     self.columnUsages[colname] = usage
 
-    
                     self.newPercent.emit(col * percent_per_col)
     
                 # read in a preferred column order (if any)
